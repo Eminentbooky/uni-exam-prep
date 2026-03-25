@@ -14,7 +14,207 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      courses: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          instructor_id: string
+          is_published: boolean
+          time_limit_minutes: number
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          instructor_id: string
+          is_published?: boolean
+          time_limit_minutes?: number
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          instructor_id?: string
+          is_published?: boolean
+          time_limit_minutes?: number
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      exam_attempts: {
+        Row: {
+          correct_answers: number | null
+          course_id: string
+          id: string
+          score: number | null
+          started_at: string
+          submitted_at: string | null
+          total_questions: number | null
+          user_id: string
+        }
+        Insert: {
+          correct_answers?: number | null
+          course_id: string
+          id?: string
+          score?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          total_questions?: number | null
+          user_id: string
+        }
+        Update: {
+          correct_answers?: number | null
+          course_id?: string
+          id?: string
+          score?: number | null
+          started_at?: string
+          submitted_at?: string | null
+          total_questions?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_attempts_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      options: {
+        Row: {
+          id: string
+          is_correct: boolean
+          option_order: number
+          option_text: string
+          question_id: string
+        }
+        Insert: {
+          id?: string
+          is_correct?: boolean
+          option_order?: number
+          option_text: string
+          question_id: string
+        }
+        Update: {
+          id?: string
+          is_correct?: boolean
+          option_order?: number
+          option_text?: string
+          question_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "options_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      questions: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          question_order: number
+          question_text: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          question_order?: number
+          question_text: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          question_order?: number
+          question_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "questions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_answers: {
+        Row: {
+          attempt_id: string
+          id: string
+          question_id: string
+          selected_option_ids: string[]
+        }
+        Insert: {
+          attempt_id: string
+          id?: string
+          question_id: string
+          selected_option_ids?: string[]
+        }
+        Update: {
+          attempt_id?: string
+          id?: string
+          question_id?: string
+          selected_option_ids?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_answers_attempt_id_fkey"
+            columns: ["attempt_id"]
+            isOneToOne: false
+            referencedRelation: "exam_attempts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "questions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
