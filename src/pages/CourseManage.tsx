@@ -53,6 +53,7 @@ export default function CourseManage() {
     setTitle(course.title);
     setDescription(course.description || '');
     setTimeLimit(course.time_limit_minutes);
+    setPrice((course as any).price || 0);
     setIsPublished(course.is_published);
 
     const { data: qs } = await supabase
