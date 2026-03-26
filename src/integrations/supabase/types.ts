@@ -14,6 +14,44 @@ export type Database = {
   }
   public: {
     Tables: {
+      course_subscriptions: {
+        Row: {
+          amount: number
+          course_id: string
+          created_at: string
+          id: string
+          paystack_reference: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          course_id: string
+          created_at?: string
+          id?: string
+          paystack_reference: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          course_id?: string
+          created_at?: string
+          id?: string
+          paystack_reference?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_subscriptions_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           created_at: string
@@ -21,6 +59,7 @@ export type Database = {
           id: string
           instructor_id: string
           is_published: boolean
+          price: number
           time_limit_minutes: number
           title: string
           updated_at: string
@@ -31,6 +70,7 @@ export type Database = {
           id?: string
           instructor_id: string
           is_published?: boolean
+          price?: number
           time_limit_minutes?: number
           title: string
           updated_at?: string
@@ -41,6 +81,7 @@ export type Database = {
           id?: string
           instructor_id?: string
           is_published?: boolean
+          price?: number
           time_limit_minutes?: number
           title?: string
           updated_at?: string

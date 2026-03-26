@@ -36,6 +36,7 @@ export default function CourseManage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [timeLimit, setTimeLimit] = useState(30);
+  const [price, setPrice] = useState(0);
   const [isPublished, setIsPublished] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [saving, setSaving] = useState(false);
@@ -52,6 +53,7 @@ export default function CourseManage() {
     setTitle(course.title);
     setDescription(course.description || '');
     setTimeLimit(course.time_limit_minutes);
+    setPrice((course as any).price || 0);
     setIsPublished(course.is_published);
 
     const { data: qs } = await supabase
@@ -139,7 +141,7 @@ export default function CourseManage() {
       if (isNew || !cId) {
         const { data, error } = await supabase
           .from('courses')
-          .insert({ title, description, time_limit_minutes: timeLimit, is_published: isPublished, instructor_id: user.id })
+          .insert({ title, description, time_limit_minutes: timeLimit, is_published: isPublished, instructor_id: user.id, price } as any)
           .select()
           .single();
         if (error) throw error;
@@ -148,7 +150,7 @@ export default function CourseManage() {
       } else {
         const { error } = await supabase
           .from('courses')
-          .update({ title, description, time_limit_minutes: timeLimit, is_published: isPublished })
+          .update({ title, description, time_limit_minutes: timeLimit, is_published: isPublished, price } as any)
           .eq('id', cId);
         if (error) throw error;
 
@@ -231,10 +233,14 @@ export default function CourseManage() {
                 <Label>Time Limit (minutes)</Label>
                 <Input type="number" value={timeLimit} onChange={(e) => setTimeLimit(Number(e.target.value))} min={1} />
               </div>
-              <div className="flex items-center gap-3 pt-6">
-                <Switch checked={isPublished} onCheckedChange={setIsPublished} />
-                <Label>Published</Label>
+              <div className="space-y-2">
+                <Label>Price (₦) — 0 for free</Label>
+                <Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} min={0} />
               </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch checked={isPublished} onCheckedChange={setIsPublished} />
+              <Label>Published</Label>
             </div>
           </CardContent>
         </Card>
