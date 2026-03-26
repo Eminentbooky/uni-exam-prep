@@ -150,7 +150,7 @@ export default function CourseManage() {
       } else {
         const { error } = await supabase
           .from('courses')
-          .update({ title, description, time_limit_minutes: timeLimit, is_published: isPublished })
+          .update({ title, description, time_limit_minutes: timeLimit, is_published: isPublished, price } as any)
           .eq('id', cId);
         if (error) throw error;
 
