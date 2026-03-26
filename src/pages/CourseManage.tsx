@@ -141,7 +141,7 @@ export default function CourseManage() {
       if (isNew || !cId) {
         const { data, error } = await supabase
           .from('courses')
-          .insert({ title, description, time_limit_minutes: timeLimit, is_published: isPublished, instructor_id: user.id })
+          .insert({ title, description, time_limit_minutes: timeLimit, is_published: isPublished, instructor_id: user.id, price } as any)
           .select()
           .single();
         if (error) throw error;
