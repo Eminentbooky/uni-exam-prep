@@ -36,6 +36,7 @@ export default function CourseManage() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [timeLimit, setTimeLimit] = useState(30);
+  const [price, setPrice] = useState(0);
   const [isPublished, setIsPublished] = useState(false);
   const [questions, setQuestions] = useState<Question[]>([]);
   const [saving, setSaving] = useState(false);
