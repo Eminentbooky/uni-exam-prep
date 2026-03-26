@@ -233,10 +233,14 @@ export default function CourseManage() {
                 <Label>Time Limit (minutes)</Label>
                 <Input type="number" value={timeLimit} onChange={(e) => setTimeLimit(Number(e.target.value))} min={1} />
               </div>
-              <div className="flex items-center gap-3 pt-6">
-                <Switch checked={isPublished} onCheckedChange={setIsPublished} />
-                <Label>Published</Label>
+              <div className="space-y-2">
+                <Label>Price (₦) — 0 for free</Label>
+                <Input type="number" value={price} onChange={(e) => setPrice(Number(e.target.value))} min={0} />
               </div>
+            </div>
+            <div className="flex items-center gap-3">
+              <Switch checked={isPublished} onCheckedChange={setIsPublished} />
+              <Label>Published</Label>
             </div>
           </CardContent>
         </Card>
