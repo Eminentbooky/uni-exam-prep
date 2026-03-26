@@ -14,6 +14,7 @@ interface Course {
   time_limit_minutes: number;
   is_published: boolean;
   instructor_id: string;
+  price: number;
 }
 
 export default function Dashboard() {
