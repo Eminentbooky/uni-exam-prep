@@ -126,9 +126,16 @@ export default function Dashboard() {
                     )}
                   </CardHeader>
                   <CardContent>
-                    <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      {course.time_limit_minutes} minutes
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                        <Clock className="w-4 h-4" />
+                        {course.time_limit_minutes} minutes
+                      </div>
+                      {!isInstructor && (
+                        <Badge variant={(course as any).price > 0 ? 'default' : 'secondary'}>
+                          {(course as any).price > 0 ? `₦${(course as any).price.toLocaleString()}` : 'Free'}
+                        </Badge>
+                      )}
                     </div>
                   </CardContent>
                 </Card>

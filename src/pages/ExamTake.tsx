@@ -1,13 +1,15 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { Clock, ChevronLeft, ChevronRight, Send, AlertTriangle } from 'lucide-react';
+import { Clock, ChevronLeft, ChevronRight, Send, AlertTriangle, Lock, CreditCard } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+
+const PAYSTACK_PUBLIC_KEY = 'pk_test_0942d59a12bae6185f59a67525be58aa9a2fbf90';
 
 interface Option {
   id: string;
@@ -27,11 +29,13 @@ interface Course {
   id: string;
   title: string;
   time_limit_minutes: number;
+  price: number;
 }
 
 export default function ExamTake() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -44,11 +48,22 @@ export default function ExamTake() {
   const [started, setStarted] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [result, setResult] = useState<{ score: number; total: number; correct: number } | null>(null);
+  const [hasSubscription, setHasSubscription] = useState(false);
+  const [checkingSub, setCheckingSub] = useState(true);
+  const [paying, setPaying] = useState(false);
   const timerRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
     if (id) loadExam(id);
   }, [id]);
+
+  // Check for payment callback
+  useEffect(() => {
+    const reference = searchParams.get('reference');
+    if (reference && id) {
+      verifyPayment(reference);
+    }
+  }, [searchParams, id]);
 
   useEffect(() => {
     if (!started || submitted) return;
@@ -66,9 +81,24 @@ export default function ExamTake() {
   }, [started, submitted]);
 
   const loadExam = async (courseId: string) => {
-    const { data: c } = await supabase.from('courses').select('id, title, time_limit_minutes').eq('id', courseId).single();
+    const { data: c } = await supabase.from('courses').select('id, title, time_limit_minutes, price' as any).eq('id', courseId).single();
     if (!c) return navigate('/');
-    setCourse(c);
+    setCourse(c as any);
+
+    // Check subscription
+    if ((c as any).price > 0 && user) {
+      const { data: sub } = await supabase
+        .from('course_subscriptions' as any)
+        .select('id')
+        .eq('course_id', courseId)
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .maybeSingle();
+      setHasSubscription(!!sub);
+    } else {
+      setHasSubscription(true); // free course
+    }
+    setCheckingSub(false);
 
     const { data: qs } = await supabase
       .from('questions')
@@ -88,6 +118,44 @@ export default function ExamTake() {
         })
       );
       setQuestions(withOptions);
+    }
+  };
+
+  const verifyPayment = async (reference: string) => {
+    setCheckingSub(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('paystack-verify', {
+        body: { reference },
+      });
+      if (data?.verified) {
+        setHasSubscription(true);
+        toast({ title: 'Payment successful!', description: 'You now have access to this exam.' });
+      } else {
+        toast({ title: 'Payment not verified', description: 'Please try again or contact support.', variant: 'destructive' });
+      }
+    } catch {
+      toast({ title: 'Verification error', variant: 'destructive' });
+    }
+    setCheckingSub(false);
+  };
+
+  const handlePayment = async () => {
+    if (!user || !course) return;
+    setPaying(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('paystack-initialize', {
+        body: {
+          course_id: course.id,
+          callback_url: window.location.href.split('?')[0],
+        },
+      });
+      if (error) throw error;
+      if (data?.authorization_url) {
+        window.location.href = data.authorization_url;
+      }
+    } catch (err: any) {
+      toast({ title: 'Payment error', description: err.message, variant: 'destructive' });
+      setPaying(false);
     }
   };
 
@@ -122,7 +190,6 @@ export default function ExamTake() {
     setSubmitted(true);
     clearInterval(timerRef.current);
 
-    // Calculate score
     let correct = 0;
     for (const q of questions) {
       const selected = answers[q.id] || [];
@@ -132,7 +199,6 @@ export default function ExamTake() {
         selected.every((id) => correctIds.includes(id));
       if (isCorrect) correct++;
 
-      // Save answer
       await supabase.from('user_answers').insert({
         attempt_id: attemptId,
         question_id: q.id,
@@ -165,7 +231,40 @@ export default function ExamTake() {
   const isLowTime = timeLeft < 60;
   const answeredCount = Object.keys(answers).filter((k) => answers[k].length > 0).length;
 
-  if (!course) return null;
+  if (!course || checkingSub) return null;
+
+  // Payment gate
+  if (!hasSubscription && course.price > 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center px-4">
+        <Card className="w-full max-w-md text-center animate-fade-in">
+          <CardHeader>
+            <div className="w-16 h-16 mx-auto rounded-full bg-muted flex items-center justify-center mb-2">
+              <Lock className="w-8 h-8 text-muted-foreground" />
+            </div>
+            <CardTitle className="text-2xl font-display">{course.title}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-muted-foreground">You need to subscribe to access this examination.</p>
+            <div className="bg-secondary/50 rounded-lg p-4">
+              <p className="text-3xl font-bold text-foreground">₦{course.price.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground mt-1">One-time payment</p>
+            </div>
+            <div className="text-sm text-muted-foreground text-left space-y-1">
+              <p>• {questions.length} questions • {course.time_limit_minutes} minutes</p>
+              <p>• Instant access after payment</p>
+              <p>• Secure payment via Paystack</p>
+            </div>
+            <Button onClick={handlePayment} disabled={paying} size="lg" className="w-full gap-2">
+              <CreditCard className="w-4 h-4" />
+              {paying ? 'Redirecting...' : `Pay ₦${course.price.toLocaleString()}`}
+            </Button>
+            <Button variant="ghost" onClick={() => navigate('/')}>Back to Dashboard</Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Result screen
   if (submitted && result) {
@@ -234,7 +333,6 @@ export default function ExamTake() {
             </div>
           </div>
         </div>
-        {/* Progress bar */}
         <div className="h-1 bg-muted">
           <div
             className="h-full bg-primary transition-all duration-300"
@@ -275,7 +373,6 @@ export default function ExamTake() {
           </Card>
         )}
 
-        {/* Navigation */}
         <div className="flex items-center justify-between mt-6">
           <Button
             variant="outline"
@@ -298,7 +395,6 @@ export default function ExamTake() {
           )}
         </div>
 
-        {/* Question navigator */}
         <div className="mt-6 flex flex-wrap gap-2 justify-center">
           {questions.map((q, i) => {
             const isAnswered = (answers[q.id] || []).length > 0;
