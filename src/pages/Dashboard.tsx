@@ -50,6 +50,13 @@ export default function Dashboard() {
               {profile?.role || 'student'}
             </Badge>
             <span className="text-sm text-muted-foreground hidden sm:inline">{user?.email}</span>
+            {!isInstructor && (
+              <Link to="/history">
+                <Button variant="ghost" size="sm" className="gap-1">
+                  <History className="w-4 h-4" /> History
+                </Button>
+              </Link>
+            )}
             <Button variant="ghost" size="sm" onClick={signOut}>
               <LogOut className="w-4 h-4" />
             </Button>
