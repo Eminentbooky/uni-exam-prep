@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import CourseManage from "./pages/CourseManage";
 import ExamTake from "./pages/ExamTake";
+import ExamHistory from "./pages/ExamHistory";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/course/:id/manage" element={<CourseManage />} />
             <Route path="/exam/:id" element={<ExamTake />} />
+            <Route path="/history" element={<ExamHistory />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
