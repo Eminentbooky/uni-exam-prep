@@ -7,31 +7,33 @@ Deno.serve(async (req) => {
   );
 
   const demoAccounts = [
-    { email: "otobongamosukoyo@gmail.com", password: "demo123456" },
-    { email: "blessingiribhogbe@gmail.com", password: "demo123456" },
+    { email: "otobongamosukoyo@gmail.com", password: "demo123456", full_name: "Otobong Amos (Instructor)", role: "instructor" },
+    { email: "blessingiribhogbe@gmail.com", password: "demo123456", full_name: "Blessing Iribhogbe (Student)", role: "student" },
   ];
 
   const results = [];
 
   for (const account of demoAccounts) {
-    // Find user by email
-    const { data: { users }, error: listError } = await supabaseAdmin.auth.admin.listUsers();
-    if (listError) {
-      results.push({ email: account.email, error: listError.message });
-      continue;
-    }
-
-    const user = users.find((u) => u.email === account.email);
-    if (!user) {
-      results.push({ email: account.email, error: "User not found" });
-      continue;
-    }
-
-    const { error } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+    // Create user
+    const { data, error } = await supabaseAdmin.auth.admin.createUser({
+      email: account.email,
       password: account.password,
+      email_confirm: true,
+      user_metadata: { full_name: account.full_name },
     });
 
-    results.push({ email: account.email, success: !error, error: error?.message });
+    if (error) {
+      results.push({ email: account.email, error: error.message });
+      continue;
+    }
+
+    // Update profile role
+    const { error: profileError } = await supabaseAdmin
+      .from("profiles")
+      .update({ role: account.role, full_name: account.full_name })
+      .eq("user_id", data.user.id);
+
+    results.push({ email: account.email, success: true, userId: data.user.id, profileUpdate: profileError?.message || "ok" });
   }
 
   return new Response(JSON.stringify({ results }), {
