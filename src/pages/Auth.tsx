@@ -143,13 +143,71 @@ export default function Auth() {
                 {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
               </Button>
             </form>
-            <div className="mt-4 text-center">
-              <button
-                onClick={() => setIsLogin(!isLogin)}
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-              </button>
+            <div className="mt-4 space-y-3">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t border-border" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or try a demo</span>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={loading}
+                  onClick={async () => {
+                    setLoading(true);
+                    try {
+                      const { error } = await supabase.auth.signInWithPassword({
+                        email: 'otobongamosukoyo@gmail.com',
+                        password: 'demo123456',
+                      });
+                      if (error) throw error;
+                      navigate('/');
+                    } catch (error: any) {
+                      toast({ title: 'Demo login failed', description: error.message, variant: 'destructive' });
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  Demo Instructor
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={loading}
+                  onClick={async () => {
+                    setLoading(true);
+                    try {
+                      const { error } = await supabase.auth.signInWithPassword({
+                        email: 'blessingiribhogbe@gmail.com',
+                        password: 'demo123456',
+                      });
+                      if (error) throw error;
+                      navigate('/');
+                    } catch (error: any) {
+                      toast({ title: 'Demo login failed', description: error.message, variant: 'destructive' });
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                >
+                  Demo Student
+                </Button>
+              </div>
+              <div className="text-center">
+                <button
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+                </button>
+              </div>
             </div>
           </CardContent>
         </Card>
