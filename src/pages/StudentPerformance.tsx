@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download } from 'lucide-react';
 
 interface StudentAttempt {
   id: string;
