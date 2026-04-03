@@ -92,6 +92,26 @@ export default function StudentPerformance() {
     ? Math.round((filtered.filter((a) => (a.score ?? 0) >= 50).length / filtered.length) * 100)
     : 0;
 
+  const scoreDistribution = useMemo(() => {
+    const buckets = [
+      { range: '0-20%', min: 0, max: 20, count: 0 },
+      { range: '21-40%', min: 21, max: 40, count: 0 },
+      { range: '41-60%', min: 41, max: 60, count: 0 },
+      { range: '61-80%', min: 61, max: 80, count: 0 },
+      { range: '81-100%', min: 81, max: 100, count: 0 },
+    ];
+    filtered.forEach((a) => {
+      const s = Math.round(a.score ?? 0);
+      const bucket = buckets.find((b) => s >= b.min && s <= b.max);
+      if (bucket) bucket.count++;
+    });
+    return buckets;
+  }, [filtered]);
+
+  const chartConfig: ChartConfig = {
+    count: { label: 'Students', color: 'hsl(var(--primary))' },
+  };
+
   const exportCsv = useCallback(() => {
     if (filtered.length === 0) return;
     const header = ['Student', 'Course', 'Date', 'Correct', 'Total', 'Score (%)'];
