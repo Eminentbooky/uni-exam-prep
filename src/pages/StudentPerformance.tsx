@@ -4,10 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } from '@/components/ui/chart';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download } from 'lucide-react';
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 interface StudentAttempt {
   id: string;
@@ -89,6 +91,26 @@ export default function StudentPerformance() {
   const passRate = filtered.length
     ? Math.round((filtered.filter((a) => (a.score ?? 0) >= 50).length / filtered.length) * 100)
     : 0;
+
+  const scoreDistribution = useMemo(() => {
+    const buckets = [
+      { range: '0-20%', min: 0, max: 20, count: 0 },
+      { range: '21-40%', min: 21, max: 40, count: 0 },
+      { range: '41-60%', min: 41, max: 60, count: 0 },
+      { range: '61-80%', min: 61, max: 80, count: 0 },
+      { range: '81-100%', min: 81, max: 100, count: 0 },
+    ];
+    filtered.forEach((a) => {
+      const s = Math.round(a.score ?? 0);
+      const bucket = buckets.find((b) => s >= b.min && s <= b.max);
+      if (bucket) bucket.count++;
+    });
+    return buckets;
+  }, [filtered]);
+
+  const chartConfig: ChartConfig = {
+    count: { label: 'Students', color: 'hsl(var(--primary))' },
+  };
 
   const exportCsv = useCallback(() => {
     if (filtered.length === 0) return;
@@ -189,7 +211,26 @@ export default function StudentPerformance() {
           </Card>
         </div>
 
-        {/* Attempts Table */}
+        {/* Score Distribution Chart */}
+        {filtered.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Score Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer config={chartConfig} className="h-[250px] w-full">
+                <BarChart data={scoreDistribution} accessibilityLayer>
+                  <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                  <XAxis dataKey="range" tickLine={false} axisLine={false} fontSize={12} />
+                  <YAxis allowDecimals={false} tickLine={false} axisLine={false} fontSize={12} />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Bar dataKey="count" fill="var(--color-count)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="text-lg">
