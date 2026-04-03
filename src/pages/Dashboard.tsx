@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Plus, Clock, LogOut, GraduationCap, History } from 'lucide-react';
+import { BookOpen, Plus, Clock, LogOut, GraduationCap, History, Users } from 'lucide-react';
 
 interface Course {
   id: string;
