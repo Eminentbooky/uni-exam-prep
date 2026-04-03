@@ -8,12 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useToast } from '@/hooks/use-toast';
 import { BookOpen } from 'lucide-react';
 
+const INSTRUCTOR_EMAIL = 'otobongukoyo22@gmail.com';
+
 export default function Auth() {
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
-  const [role, setRole] = useState<'student' | 'instructor'>('student');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -26,8 +27,18 @@ export default function Auth() {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
+
+        // Set role based on email
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const role = user.email?.toLowerCase() === INSTRUCTOR_EMAIL ? 'instructor' : 'student';
+          await supabase.from('profiles').update({ role }).eq('user_id', user.id);
+        }
+
         navigate('/');
       } else {
+        const role = email.toLowerCase() === INSTRUCTOR_EMAIL ? 'instructor' : 'student';
+
         const { error } = await supabase.auth.signUp({
           email,
           password,
@@ -38,7 +49,6 @@ export default function Auth() {
         });
         if (error) throw error;
 
-        // Update profile role after signup
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           await supabase.from('profiles').update({ role, full_name: fullName }).eq('user_id', user.id);
@@ -82,39 +92,16 @@ export default function Auth() {
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               {!isLogin && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="fullName">Full Name</Label>
-                    <Input
-                      id="fullName"
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      required
-                      placeholder="Your full name"
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label>I am a</Label>
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant={role === 'student' ? 'default' : 'outline'}
-                        onClick={() => setRole('student')}
-                        className="w-full"
-                      >
-                        Student
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={role === 'instructor' ? 'default' : 'outline'}
-                        onClick={() => setRole('instructor')}
-                        className="w-full"
-                      >
-                        Instructor
-                      </Button>
-                    </div>
-                  </div>
-                </>
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Full Name</Label>
+                  <Input
+                    id="fullName"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    placeholder="Your full name"
+                  />
+                </div>
               )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
@@ -143,71 +130,13 @@ export default function Auth() {
                 {loading ? 'Please wait...' : isLogin ? 'Sign In' : 'Create Account'}
               </Button>
             </form>
-            <div className="mt-4 space-y-3">
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t border-border" />
-                </div>
-                <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Or try a demo</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={loading}
-                  onClick={async () => {
-                    setLoading(true);
-                    try {
-                      const { error } = await supabase.auth.signInWithPassword({
-                        email: 'otobongamosukoyo@gmail.com',
-                        password: 'demo123456',
-                      });
-                      if (error) throw error;
-                      navigate('/');
-                    } catch (error: any) {
-                      toast({ title: 'Demo login failed', description: error.message, variant: 'destructive' });
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                >
-                  Demo Instructor
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={loading}
-                  onClick={async () => {
-                    setLoading(true);
-                    try {
-                      const { error } = await supabase.auth.signInWithPassword({
-                        email: 'blessingiribhogbe@gmail.com',
-                        password: 'demo123456',
-                      });
-                      if (error) throw error;
-                      navigate('/');
-                    } catch (error: any) {
-                      toast({ title: 'Demo login failed', description: error.message, variant: 'destructive' });
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                >
-                  Demo Student
-                </Button>
-              </div>
-              <div className="text-center">
-                <button
-                  onClick={() => setIsLogin(!isLogin)}
-                  className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
-                </button>
-              </div>
+            <div className="mt-4 text-center">
+              <button
+                onClick={() => setIsLogin(!isLogin)}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              >
+                {isLogin ? "Don't have an account? Sign up" : 'Already have an account? Sign in'}
+              </button>
             </div>
           </CardContent>
         </Card>

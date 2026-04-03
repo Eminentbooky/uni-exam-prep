@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, Plus, Clock, LogOut, GraduationCap, History } from 'lucide-react';
+import { BookOpen, Plus, Clock, LogOut, GraduationCap, History, Users } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -50,6 +50,13 @@ export default function Dashboard() {
               {profile?.role || 'student'}
             </Badge>
             <span className="text-sm text-muted-foreground hidden sm:inline">{user?.email}</span>
+            {isInstructor && (
+              <Link to="/students">
+                <Button variant="ghost" size="sm" className="gap-1">
+                  <Users className="w-4 h-4" /> Students
+                </Button>
+              </Link>
+            )}
             {!isInstructor && (
               <Link to="/history">
                 <Button variant="ghost" size="sm" className="gap-1">
