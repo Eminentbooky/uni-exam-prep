@@ -9,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download } from 'lucide-react';
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 interface StudentAttempt {
   id: string;
