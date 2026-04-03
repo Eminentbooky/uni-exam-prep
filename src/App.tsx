@@ -9,6 +9,7 @@ import Auth from "./pages/Auth";
 import CourseManage from "./pages/CourseManage";
 import ExamTake from "./pages/ExamTake";
 import ExamHistory from "./pages/ExamHistory";
+import StudentPerformance from "./pages/StudentPerformance";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
