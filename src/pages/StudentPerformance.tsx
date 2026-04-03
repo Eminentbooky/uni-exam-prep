@@ -90,6 +90,27 @@ export default function StudentPerformance() {
     ? Math.round((filtered.filter((a) => (a.score ?? 0) >= 50).length / filtered.length) * 100)
     : 0;
 
+  const exportCsv = useCallback(() => {
+    if (filtered.length === 0) return;
+    const header = ['Student', 'Course', 'Date', 'Correct', 'Total', 'Score (%)'];
+    const rows = filtered.map((a) => [
+      a.profiles?.full_name || 'Unknown Student',
+      a.courses?.title || 'Unknown',
+      a.submitted_at ? new Date(a.submitted_at).toLocaleDateString() : '',
+      a.correct_answers ?? '',
+      a.total_questions ?? '',
+      a.score != null ? Math.round(a.score) : '',
+    ]);
+    const csv = [header, ...rows].map((r) => r.map((v) => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `student-performance${selectedCourse !== 'all' ? `-${courses.find(c => c.id === selectedCourse)?.title}` : ''}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }, [filtered, selectedCourse, courses]);
+
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card">
@@ -99,10 +120,16 @@ export default function StudentPerformance() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
           </Link>
-          <div>
+          <div className="flex-1">
             <h1 className="text-xl font-display font-bold text-foreground">Student Performance</h1>
             <p className="text-sm text-muted-foreground">View how students are performing across your courses</p>
           </div>
+          {filtered.length > 0 && (
+            <Button variant="outline" size="sm" onClick={exportCsv} className="gap-1.5">
+              <Download className="w-4 h-4" />
+              <span className="hidden sm:inline">Export CSV</span>
+            </Button>
+          )}
         </div>
       </header>
 
