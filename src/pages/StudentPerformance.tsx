@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/lib/auth';
@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter } from 'lucide-react';
 
 interface StudentAttempt {
   id: string;
@@ -21,28 +22,34 @@ interface StudentAttempt {
   profiles: { full_name: string | null; user_id: string } | null;
 }
 
+interface CourseOption {
+  id: string;
+  title: string;
+}
+
 export default function StudentPerformance() {
   const { user } = useAuth();
   const [attempts, setAttempts] = useState<StudentAttempt[]>([]);
+  const [courses, setCourses] = useState<CourseOption[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string>('all');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) return;
     const load = async () => {
-      // Get all courses by this instructor
-      const { data: courses } = await supabase
+      const { data: coursesData } = await supabase
         .from('courses')
-        .select('id')
+        .select('id, title')
         .eq('instructor_id', user.id);
 
-      if (!courses || courses.length === 0) {
+      if (!coursesData || coursesData.length === 0) {
         setLoading(false);
         return;
       }
 
-      const courseIds = courses.map((c) => c.id);
+      setCourses(coursesData);
+      const courseIds = coursesData.map((c) => c.id);
 
-      // Get all attempts for those courses
       const { data } = await supabase
         .from('exam_attempts')
         .select('*, courses(title)')
@@ -51,22 +58,17 @@ export default function StudentPerformance() {
         .order('submitted_at', { ascending: false });
 
       if (data) {
-        // Get unique user_ids from attempts
         const userIds = [...new Set(data.map((a) => a.user_id))];
-
-        // Get profiles for those users
         const { data: profiles } = await supabase
           .from('profiles')
           .select('user_id, full_name')
           .in('user_id', userIds);
 
         const profileMap = new Map(profiles?.map((p) => [p.user_id, p]) || []);
-
         const enriched = data.map((a) => ({
           ...a,
           profiles: profileMap.get(a.user_id) || null,
         }));
-
         setAttempts(enriched as StudentAttempt[]);
       }
 
@@ -75,12 +77,17 @@ export default function StudentPerformance() {
     load();
   }, [user]);
 
-  const totalStudents = new Set(attempts.map((a) => a.user_id)).size;
-  const avgScore = attempts.length
-    ? Math.round(attempts.reduce((sum, a) => sum + (a.score ?? 0), 0) / attempts.length)
+  const filtered = useMemo(
+    () => selectedCourse === 'all' ? attempts : attempts.filter((a) => a.course_id === selectedCourse),
+    [attempts, selectedCourse]
+  );
+
+  const totalStudents = new Set(filtered.map((a) => a.user_id)).size;
+  const avgScore = filtered.length
+    ? Math.round(filtered.reduce((sum, a) => sum + (a.score ?? 0), 0) / filtered.length)
     : 0;
-  const passRate = attempts.length
-    ? Math.round((attempts.filter((a) => (a.score ?? 0) >= 50).length / attempts.length) * 100)
+  const passRate = filtered.length
+    ? Math.round((filtered.filter((a) => (a.score ?? 0) >= 50).length / filtered.length) * 100)
     : 0;
 
   return (
@@ -100,6 +107,24 @@ export default function StudentPerformance() {
       </header>
 
       <main className="container mx-auto px-4 py-8 space-y-6">
+        {/* Course Filter */}
+        {courses.length > 1 && (
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-muted-foreground" />
+            <Select value={selectedCourse} onValueChange={setSelectedCourse}>
+              <SelectTrigger className="w-[240px]">
+                <SelectValue placeholder="Filter by course" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Courses</SelectItem>
+                {courses.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>{c.title}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <Card>
@@ -140,14 +165,16 @@ export default function StudentPerformance() {
         {/* Attempts Table */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">All Student Attempts</CardTitle>
+            <CardTitle className="text-lg">
+              {selectedCourse === 'all' ? 'All Student Attempts' : `Attempts — ${courses.find(c => c.id === selectedCourse)?.title}`}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
               <div className="flex justify-center py-8">
                 <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin" />
               </div>
-            ) : attempts.length === 0 ? (
+            ) : filtered.length === 0 ? (
               <div className="text-center py-8">
                 <Users className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
                 <p className="text-muted-foreground">No student attempts yet.</p>
@@ -165,7 +192,7 @@ export default function StudentPerformance() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {attempts.map((attempt) => {
+                    {filtered.map((attempt) => {
                       const score = attempt.score ?? 0;
                       const passed = score >= 50;
                       return (
