@@ -8,8 +8,9 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download } from 'lucide-react';
-import { Bar, BarChart, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download, User as UserIcon } from 'lucide-react';
+import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Line, LineChart } from 'recharts';
 
 interface StudentAttempt {
   id: string;
@@ -34,6 +35,7 @@ export default function StudentPerformance() {
   const [attempts, setAttempts] = useState<StudentAttempt[]>([]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
+  const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -110,7 +112,27 @@ export default function StudentPerformance() {
 
   const chartConfig: ChartConfig = {
     count: { label: 'Students', color: 'hsl(var(--primary))' },
+    score: { label: 'Score', color: 'hsl(var(--primary))' },
   };
+
+  const studentDetail = useMemo(() => {
+    if (!selectedStudent) return null;
+    const studentAttempts = attempts
+      .filter((a) => a.user_id === selectedStudent)
+      .sort((x, y) => new Date(x.submitted_at!).getTime() - new Date(y.submitted_at!).getTime());
+    if (studentAttempts.length === 0) return null;
+    const name = studentAttempts[0].profiles?.full_name || 'Unknown Student';
+    const scores = studentAttempts.map((a) => a.score ?? 0);
+    const avg = Math.round(scores.reduce((s, v) => s + v, 0) / scores.length);
+    const best = Math.round(Math.max(...scores));
+    const trend = studentAttempts.map((a, i) => ({
+      label: `#${i + 1}`,
+      date: a.submitted_at ? new Date(a.submitted_at).toLocaleDateString() : '',
+      score: Math.round(a.score ?? 0),
+      course: a.courses?.title || 'Unknown',
+    }));
+    return { name, attempts: studentAttempts, avg, best, trend, total: studentAttempts.length };
+  }, [selectedStudent, attempts]);
 
   const exportCsv = useCallback(() => {
     if (filtered.length === 0) return;
@@ -264,8 +286,12 @@ export default function StudentPerformance() {
                       const score = attempt.score ?? 0;
                       const passed = score >= 50;
                       return (
-                        <TableRow key={attempt.id}>
-                          <TableCell className="font-medium">
+                        <TableRow
+                          key={attempt.id}
+                          className="cursor-pointer hover:bg-muted/50"
+                          onClick={() => setSelectedStudent(attempt.user_id)}
+                        >
+                          <TableCell className="font-medium text-primary hover:underline">
                             {attempt.profiles?.full_name || 'Unknown Student'}
                           </TableCell>
                           <TableCell className="text-muted-foreground">
@@ -295,6 +321,96 @@ export default function StudentPerformance() {
           </CardContent>
         </Card>
       </main>
+
+      <Dialog open={!!selectedStudent} onOpenChange={(open) => !open && setSelectedStudent(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          {studentDetail && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <UserIcon className="w-5 h-5 text-primary" />
+                  {studentDetail.name}
+                </DialogTitle>
+                <DialogDescription>Progress over time across {studentDetail.total} attempt{studentDetail.total !== 1 ? 's' : ''}</DialogDescription>
+              </DialogHeader>
+
+              <div className="grid grid-cols-3 gap-3">
+                <Card>
+                  <CardContent className="p-3">
+                    <p className="text-xs text-muted-foreground">Attempts</p>
+                    <p className="text-xl font-bold text-foreground">{studentDetail.total}</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3">
+                    <p className="text-xs text-muted-foreground">Average</p>
+                    <p className="text-xl font-bold text-foreground">{studentDetail.avg}%</p>
+                  </CardContent>
+                </Card>
+                <Card>
+                  <CardContent className="p-3">
+                    <p className="text-xs text-muted-foreground">Best</p>
+                    <p className="text-xl font-bold text-foreground">{studentDetail.best}%</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {studentDetail.trend.length > 1 && (
+                <div>
+                  <p className="text-sm font-medium mb-2 text-foreground">Score Trend</p>
+                  <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                    <LineChart data={studentDetail.trend} accessibilityLayer margin={{ left: 4, right: 8, top: 8 }}>
+                      <CartesianGrid vertical={false} strokeDasharray="3 3" />
+                      <XAxis dataKey="label" tickLine={false} axisLine={false} fontSize={12} />
+                      <YAxis domain={[0, 100]} tickLine={false} axisLine={false} fontSize={12} />
+                      <ChartTooltip content={<ChartTooltipContent />} />
+                      <Line type="monotone" dataKey="score" stroke="var(--color-score)" strokeWidth={2} dot={{ r: 4 }} />
+                    </LineChart>
+                  </ChartContainer>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm font-medium mb-2 text-foreground">Attempt History</p>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Date</TableHead>
+                        <TableHead>Course</TableHead>
+                        <TableHead>Score</TableHead>
+                        <TableHead>Result</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {[...studentDetail.attempts].reverse().map((a) => {
+                        const s = Math.round(a.score ?? 0);
+                        const passed = s >= 50;
+                        return (
+                          <TableRow key={a.id}>
+                            <TableCell className="text-muted-foreground text-sm">
+                              {a.submitted_at ? new Date(a.submitted_at).toLocaleDateString() : ''}
+                            </TableCell>
+                            <TableCell className="text-sm">{a.courses?.title || 'Unknown'}</TableCell>
+                            <TableCell className="text-sm">
+                              {a.correct_answers}/{a.total_questions} ({s}%)
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={passed ? 'default' : 'destructive'}>
+                                {passed ? 'Passed' : 'Failed'}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                </div>
+              </div>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
