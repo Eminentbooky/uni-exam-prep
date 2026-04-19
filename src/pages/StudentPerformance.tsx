@@ -8,8 +8,9 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent, type ChartConfig } f
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download, User as UserIcon } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download, User as UserIcon, Search } from 'lucide-react';
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Line, LineChart } from 'recharts';
 
 interface StudentAttempt {
@@ -36,6 +37,7 @@ export default function StudentPerformance() {
   const [courses, setCourses] = useState<CourseOption[]>([]);
   const [selectedCourse, setSelectedCourse] = useState<string>('all');
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -81,10 +83,12 @@ export default function StudentPerformance() {
     load();
   }, [user]);
 
-  const filtered = useMemo(
-    () => selectedCourse === 'all' ? attempts : attempts.filter((a) => a.course_id === selectedCourse),
-    [attempts, selectedCourse]
-  );
+  const filtered = useMemo(() => {
+    const byCourse = selectedCourse === 'all' ? attempts : attempts.filter((a) => a.course_id === selectedCourse);
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return byCourse;
+    return byCourse.filter((a) => (a.profiles?.full_name || 'Unknown Student').toLowerCase().includes(q));
+  }, [attempts, selectedCourse, searchQuery]);
 
   const totalStudents = new Set(filtered.map((a) => a.user_id)).size;
   const avgScore = filtered.length
