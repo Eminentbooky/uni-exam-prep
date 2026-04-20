@@ -325,8 +325,24 @@ export default function StudentPerformance() {
                     <TableRow>
                       <TableHead>Student</TableHead>
                       <TableHead>Course</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Score</TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:text-foreground transition-colors"
+                        onClick={() => handleSort('date')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Date
+                          <SortIcon column="date" />
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:text-foreground transition-colors"
+                        onClick={() => handleSort('score')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Score
+                          <SortIcon column="score" />
+                        </div>
+                      </TableHead>
                       <TableHead>Result</TableHead>
                     </TableRow>
                   </TableHeader>
