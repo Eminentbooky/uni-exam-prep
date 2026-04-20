@@ -507,6 +507,23 @@ export default function StudentPerformance() {
           )}
         </DialogContent>
       </Dialog>
+
+      {feedbackTarget && (
+        <AttemptFeedbackDialog
+          open={!!feedbackTarget}
+          onOpenChange={(open) => !open && setFeedbackTarget(null)}
+          attemptId={feedbackTarget.id}
+          studentName={feedbackTarget.name}
+          onSaved={(id, hasFeedback) => {
+            setFeedbackIds((prev) => {
+              const next = new Set(prev);
+              if (hasFeedback) next.add(id);
+              else next.delete(id);
+              return next;
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
