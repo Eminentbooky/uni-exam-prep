@@ -39,6 +39,24 @@ export default function StudentPerformance() {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sortColumn, setSortColumn] = useState<'date' | 'score' | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (column: 'date' | 'score') => {
+    if (sortColumn === column) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+
+  const SortIcon = ({ column }: { column: 'date' | 'score' }) => {
+    if (sortColumn !== column) return <ChevronUp className="w-4 h-4 text-muted-foreground opacity-30" />;
+    return sortDirection === 'asc'
+      ? <ChevronUp className="w-4 h-4 text-primary" />
+      : <ChevronDown className="w-4 h-4 text-primary" />;
+  };
 
   useEffect(() => {
     if (!user) return;
