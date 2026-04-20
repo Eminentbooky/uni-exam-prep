@@ -42,6 +42,8 @@ export default function StudentPerformance() {
   const [loading, setLoading] = useState(true);
   const [sortColumn, setSortColumn] = useState<'date' | 'score' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [feedbackIds, setFeedbackIds] = useState<Set<string>>(new Set());
+  const [feedbackTarget, setFeedbackTarget] = useState<{ id: string; name: string } | null>(null);
 
   const handleSort = (column: 'date' | 'score') => {
     if (sortColumn === column) {
