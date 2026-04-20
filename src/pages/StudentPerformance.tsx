@@ -390,6 +390,23 @@ export default function StudentPerformance() {
                               {passed ? 'Passed' : 'Failed'}
                             </Badge>
                           </TableCell>
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant={feedbackIds.has(attempt.id) ? 'secondary' : 'ghost'}
+                              size="sm"
+                              onClick={() => setFeedbackTarget({
+                                id: attempt.id,
+                                name: attempt.profiles?.full_name || 'Unknown Student',
+                              })}
+                              className="gap-1.5"
+                            >
+                              {feedbackIds.has(attempt.id) ? (
+                                <><MessageSquare className="w-3.5 h-3.5" /><span className="hidden sm:inline">View</span></>
+                              ) : (
+                                <><MessageSquarePlus className="w-3.5 h-3.5" /><span className="hidden sm:inline">Add</span></>
+                              )}
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       );
                     })}
