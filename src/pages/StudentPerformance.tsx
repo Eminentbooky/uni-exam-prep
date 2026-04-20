@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download, User as UserIcon, Search } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download, User as UserIcon, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Line, LineChart } from 'recharts';
 
 interface StudentAttempt {
@@ -39,6 +39,24 @@ export default function StudentPerformance() {
   const [selectedStudent, setSelectedStudent] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [sortColumn, setSortColumn] = useState<'date' | 'score' | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+
+  const handleSort = (column: 'date' | 'score') => {
+    if (sortColumn === column) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortColumn(column);
+      setSortDirection('desc');
+    }
+  };
+
+  const SortIcon = ({ column }: { column: 'date' | 'score' }) => {
+    if (sortColumn !== column) return <ChevronUp className="w-4 h-4 text-muted-foreground opacity-30" />;
+    return sortDirection === 'asc'
+      ? <ChevronUp className="w-4 h-4 text-primary" />
+      : <ChevronDown className="w-4 h-4 text-primary" />;
+  };
 
   useEffect(() => {
     if (!user) return;
@@ -84,11 +102,26 @@ export default function StudentPerformance() {
   }, [user]);
 
   const filtered = useMemo(() => {
-    const byCourse = selectedCourse === 'all' ? attempts : attempts.filter((a) => a.course_id === selectedCourse);
+    let byCourse = selectedCourse === 'all' ? attempts : attempts.filter((a) => a.course_id === selectedCourse);
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return byCourse;
-    return byCourse.filter((a) => (a.profiles?.full_name || 'Unknown Student').toLowerCase().includes(q));
-  }, [attempts, selectedCourse, searchQuery]);
+    if (q) {
+      byCourse = byCourse.filter((a) => (a.profiles?.full_name || 'Unknown Student').toLowerCase().includes(q));
+    }
+    if (sortColumn) {
+      byCourse = [...byCourse].sort((a, b) => {
+        let comparison = 0;
+        if (sortColumn === 'date') {
+          const dateA = new Date(a.submitted_at || 0).getTime();
+          const dateB = new Date(b.submitted_at || 0).getTime();
+          comparison = dateA - dateB;
+        } else if (sortColumn === 'score') {
+          comparison = (a.score ?? 0) - (b.score ?? 0);
+        }
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    }
+    return byCourse;
+  }, [attempts, selectedCourse, searchQuery, sortColumn, sortDirection]);
 
   const totalStudents = new Set(filtered.map((a) => a.user_id)).size;
   const avgScore = filtered.length
@@ -292,8 +325,24 @@ export default function StudentPerformance() {
                     <TableRow>
                       <TableHead>Student</TableHead>
                       <TableHead>Course</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Score</TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:text-foreground transition-colors"
+                        onClick={() => handleSort('date')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Date
+                          <SortIcon column="date" />
+                        </div>
+                      </TableHead>
+                      <TableHead
+                        className="cursor-pointer hover:text-foreground transition-colors"
+                        onClick={() => handleSort('score')}
+                      >
+                        <div className="flex items-center gap-1">
+                          Score
+                          <SortIcon column="score" />
+                        </div>
+                      </TableHead>
                       <TableHead>Result</TableHead>
                     </TableRow>
                   </TableHeader>
