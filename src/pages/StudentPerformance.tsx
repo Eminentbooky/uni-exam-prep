@@ -357,6 +357,7 @@ export default function StudentPerformance() {
                         </div>
                       </TableHead>
                       <TableHead>Result</TableHead>
+                      <TableHead className="text-right">Feedback</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
