@@ -102,11 +102,26 @@ export default function StudentPerformance() {
   }, [user]);
 
   const filtered = useMemo(() => {
-    const byCourse = selectedCourse === 'all' ? attempts : attempts.filter((a) => a.course_id === selectedCourse);
+    let byCourse = selectedCourse === 'all' ? attempts : attempts.filter((a) => a.course_id === selectedCourse);
     const q = searchQuery.trim().toLowerCase();
-    if (!q) return byCourse;
-    return byCourse.filter((a) => (a.profiles?.full_name || 'Unknown Student').toLowerCase().includes(q));
-  }, [attempts, selectedCourse, searchQuery]);
+    if (q) {
+      byCourse = byCourse.filter((a) => (a.profiles?.full_name || 'Unknown Student').toLowerCase().includes(q));
+    }
+    if (sortColumn) {
+      byCourse = [...byCourse].sort((a, b) => {
+        let comparison = 0;
+        if (sortColumn === 'date') {
+          const dateA = new Date(a.submitted_at || 0).getTime();
+          const dateB = new Date(b.submitted_at || 0).getTime();
+          comparison = dateA - dateB;
+        } else if (sortColumn === 'score') {
+          comparison = (a.score ?? 0) - (b.score ?? 0);
+        }
+        return sortDirection === 'asc' ? comparison : -comparison;
+      });
+    }
+    return byCourse;
+  }, [attempts, selectedCourse, searchQuery, sortColumn, sortDirection]);
 
   const totalStudents = new Set(filtered.map((a) => a.user_id)).size;
   const avgScore = filtered.length
