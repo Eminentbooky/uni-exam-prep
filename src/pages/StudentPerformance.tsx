@@ -97,6 +97,16 @@ export default function StudentPerformance() {
           profiles: profileMap.get(a.user_id) || null,
         }));
         setAttempts(enriched as StudentAttempt[]);
+
+        const attemptIds = data.map((a) => a.id);
+        if (attemptIds.length > 0) {
+          const { data: fb } = await supabase
+            .from('attempt_feedback')
+            .select('attempt_id')
+            .eq('instructor_id', user.id)
+            .in('attempt_id', attemptIds);
+          if (fb) setFeedbackIds(new Set(fb.map((f) => f.attempt_id)));
+        }
       }
 
       setLoading(false);
