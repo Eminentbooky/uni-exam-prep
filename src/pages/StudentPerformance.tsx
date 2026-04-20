@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download, User as UserIcon, Search } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download, User as UserIcon, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Line, LineChart } from 'recharts';
 
 interface StudentAttempt {
