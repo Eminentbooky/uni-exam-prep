@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      attempt_feedback: {
+        Row: {
+          attempt_id: string
+          created_at: string
+          feedback_text: string
+          id: string
+          instructor_id: string
+          updated_at: string
+        }
+        Insert: {
+          attempt_id: string
+          created_at?: string
+          feedback_text: string
+          id?: string
+          instructor_id: string
+          updated_at?: string
+        }
+        Update: {
+          attempt_id?: string
+          created_at?: string
+          feedback_text?: string
+          id?: string
+          instructor_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       course_subscriptions: {
         Row: {
           amount: number

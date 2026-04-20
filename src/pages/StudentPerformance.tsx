@@ -10,8 +10,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download, User as UserIcon, Search, ChevronUp, ChevronDown } from 'lucide-react';
+import { ArrowLeft, Users, Trophy, TrendingUp, CalendarDays, Filter, Download, User as UserIcon, Search, ChevronUp, ChevronDown, MessageSquare, MessageSquarePlus } from 'lucide-react';
 import { Bar, BarChart, XAxis, YAxis, CartesianGrid, Line, LineChart } from 'recharts';
+import AttemptFeedbackDialog from '@/components/AttemptFeedbackDialog';
 
 interface StudentAttempt {
   id: string;
@@ -41,6 +42,8 @@ export default function StudentPerformance() {
   const [loading, setLoading] = useState(true);
   const [sortColumn, setSortColumn] = useState<'date' | 'score' | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [feedbackIds, setFeedbackIds] = useState<Set<string>>(new Set());
+  const [feedbackTarget, setFeedbackTarget] = useState<{ id: string; name: string } | null>(null);
 
   const handleSort = (column: 'date' | 'score') => {
     if (sortColumn === column) {
@@ -94,6 +97,16 @@ export default function StudentPerformance() {
           profiles: profileMap.get(a.user_id) || null,
         }));
         setAttempts(enriched as StudentAttempt[]);
+
+        const attemptIds = data.map((a) => a.id);
+        if (attemptIds.length > 0) {
+          const { data: fb } = await supabase
+            .from('attempt_feedback')
+            .select('attempt_id')
+            .eq('instructor_id', user.id)
+            .in('attempt_id', attemptIds);
+          if (fb) setFeedbackIds(new Set(fb.map((f) => f.attempt_id)));
+        }
       }
 
       setLoading(false);
@@ -344,6 +357,7 @@ export default function StudentPerformance() {
                         </div>
                       </TableHead>
                       <TableHead>Result</TableHead>
+                      <TableHead className="text-right">Feedback</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -375,6 +389,23 @@ export default function StudentPerformance() {
                             <Badge variant={passed ? 'default' : 'destructive'}>
                               {passed ? 'Passed' : 'Failed'}
                             </Badge>
+                          </TableCell>
+                          <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
+                            <Button
+                              variant={feedbackIds.has(attempt.id) ? 'secondary' : 'ghost'}
+                              size="sm"
+                              onClick={() => setFeedbackTarget({
+                                id: attempt.id,
+                                name: attempt.profiles?.full_name || 'Unknown Student',
+                              })}
+                              className="gap-1.5"
+                            >
+                              {feedbackIds.has(attempt.id) ? (
+                                <><MessageSquare className="w-3.5 h-3.5" /><span className="hidden sm:inline">View</span></>
+                              ) : (
+                                <><MessageSquarePlus className="w-3.5 h-3.5" /><span className="hidden sm:inline">Add</span></>
+                              )}
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );
@@ -476,6 +507,23 @@ export default function StudentPerformance() {
           )}
         </DialogContent>
       </Dialog>
+
+      {feedbackTarget && (
+        <AttemptFeedbackDialog
+          open={!!feedbackTarget}
+          onOpenChange={(open) => !open && setFeedbackTarget(null)}
+          attemptId={feedbackTarget.id}
+          studentName={feedbackTarget.name}
+          onSaved={(id, hasFeedback) => {
+            setFeedbackIds((prev) => {
+              const next = new Set(prev);
+              if (hasFeedback) next.add(id);
+              else next.delete(id);
+              return next;
+            });
+          }}
+        />
+      )}
     </div>
   );
 }
